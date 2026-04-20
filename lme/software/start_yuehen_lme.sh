@@ -30,7 +30,7 @@ start() {
     mkdir -p "$HOME/.openclaw/yuehen_queue"
     
     # 启动守护进程
-    cd "$HOME/.openclaw/workspace"
+    cd "$HOME/.openclaw/workspace/lme/software"
     nohup python3 yuehen_lme_daemon_v3.py >> "$LOG_FILE" 2>&1 &
     
     sleep 3
