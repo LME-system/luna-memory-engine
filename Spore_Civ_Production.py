@@ -7,6 +7,7 @@ import hashlib
 import platform
 import psutil
 import numpy as np
+import os
 from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 from typing import Dict, Any, List, Optional
 from collections import defaultdict
@@ -202,9 +203,25 @@ class A2AHTTPServer:
     def __init__(self, node_id, hive_id, host=None, port=None):
         self.node_id = node_id
         self.hive_id = hive_id
-        self.host = host or CONFIG["WG_VPN_IP"]
+        # 自动检测可用绑定地址（WireGuard 优先，否则回退到本地）
+        self.host = host or self._detect_bind_host()
         self.port = port or CONFIG["A2A_PORT"]
         self.running = False
+        
+    def _detect_bind_host(self):
+        """检测可用的绑定地址：优先 WireGuard VPN，其次本地回环"""
+        wg_ip = CONFIG.get("WG_VPN_IP", "10.200.200.1")
+        # 测试能否绑定到 VPN IP
+        test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            test_sock.bind((wg_ip, 0))
+            test_sock.close()
+            print(f"✅ VPN IP 可用: {wg_ip}")
+            return wg_ip
+        except:
+            test_sock.close()
+            print(f"⚠️ VPN IP {wg_ip} 未激活，回退到 127.0.0.1")
+            return "127.0.0.1"
         self.agent_card = {
             "name": f"USB-Node-{node_id}",
             "description": "Universal Semantic Bridge - 致力于 Agent 全宇宙联合",
@@ -486,7 +503,7 @@ class SporeEntity:
                 "type": "SENSE", 
                 "origin": self.node_id, 
                 "hive_id": self.hive_id, 
-                "data": y.tolist()
+                "data": y if isinstance(y, list) else y.tolist()
             })
             
             # 🆕 发送 WG 自动发现广播
