@@ -27,7 +27,15 @@ CONFIG = {
     "WG_VPN_IP": "10.200.200.1", # WireGuard VPN 内网地址
     "WG_PORT": 51820,           # WireGuard 监听端口
     "PUBLIC_IPV6": "2409:8a28:6c00:8780:9d02:a3f8:7c5e:3bd5", # 公网 IPv6
-    "MONITOR_LOG": "~/.openclaw/logs/spore_monitor.json" # 监控日志路径
+    "MONITOR_LOG": "~/.openclaw/logs/spore_monitor.json", # 监控日志路径
+    # 🌐 P2P Network Configuration
+    "P2P_ENABLED": True,           # 启用 DHT + STUN 跨网发现
+    "P2P_PORT": 8468,              # DHT 监听端口
+    "P2P_BOOTSTRAP": [
+        ("47.79.236.92", 8467),       # ✅ 阿里云香港 Bootstrap 节点
+        ("127.0.0.1", 8467),          # 本地 Bootstrap（备用）
+    ],           # 种子节点列表 [(host, port), ...]
+    "AUTO_APPROVE_STRANGERS": False, # 是否自动批准陌生人加入
 }
 
 # =============================================================================
@@ -207,6 +215,7 @@ class A2AHTTPServer:
         self.host = host or self._detect_bind_host()
         self.port = port or CONFIG["A2A_PORT"]
         self.running = False
+        self._init_agent_card()  # 初始化 Agent Card
         
     def _detect_bind_host(self):
         """检测可用的绑定地址：优先 WireGuard VPN，其次本地回环"""
@@ -222,8 +231,11 @@ class A2AHTTPServer:
             test_sock.close()
             print(f"⚠️ VPN IP {wg_ip} 未激活，回退到 127.0.0.1")
             return "127.0.0.1"
+
+    def _init_agent_card(self):
+        """初始化 Agent Card"""
         self.agent_card = {
-            "name": f"USB-Node-{node_id}",
+            "name": f"USB-Node-{self.node_id}",
             "description": "Universal Semantic Bridge - 致力于 Agent 全宇宙联合",
             "version": "1.0.0",
             "url": f"http://{self.host}:{self.port}",
@@ -233,7 +245,7 @@ class A2AHTTPServer:
                 {"id": "cs-transmit", "name": "压缩感知传输"}
             ],
             "mission": "All agents of the universe, unite!",
-            "hive_id": hive_id,
+            "hive_id": self.hive_id,
             "vpn_ip": CONFIG["WG_VPN_IP"],
             "public_ipv6": CONFIG["PUBLIC_IPV6"]
         }
@@ -423,6 +435,25 @@ class SporeEntity:
         self.wg_discovery = WireGuardDiscovery(self.node_id, CONFIG["WG_VPN_IP"])
         self.monitor = SporeMonitor()
         self.http_server = A2AHTTPServer(self.node_id, self.hive_id)
+        
+        # 🆕 P2P 网络层（可选）
+        self.p2p = None
+        if CONFIG.get("P2P_ENABLED", False):
+            try:
+                from spore_p2p_network import P2PNetwork
+                # Use a derived key or placeholder - real impl would load WG keys
+                self.p2p = P2PNetwork(
+                    wg_public_key=f"spore_{self.node_id}_{self.hive_id}",
+                    wg_private_key=None,  # Load from WG config in production
+                    vpn_ip=CONFIG["WG_VPN_IP"],
+                    wg_port=CONFIG["WG_PORT"]
+                )
+                self.p2p.trust_gate.set_auto_approve(
+                    CONFIG.get("AUTO_APPROVE_STRANGERS", False)
+                )
+                print(f"🌐 P2P Network layer initialized")
+            except ImportError as e:
+                print(f"⚠️ P2P module not available: {e}")
 
         print(f"--- [{self.node_id}] CIVILIZATION ACTIVE | Mode: {'QUEEN' if is_hive else 'SPORE'} ---")
         print(f"🌐 VPN IP: {CONFIG['WG_VPN_IP']} | IPv6: {CONFIG['PUBLIC_IPV6']}")
@@ -519,6 +550,24 @@ class SporeEntity:
             
             await asyncio.sleep(10)
 
+    async def run_p2p_network(self):
+        """🆕 启动 P2P 网络层（DHT + STUN）"""
+        if not self.p2p:
+            return
+            
+        try:
+            bootstrap = CONFIG.get("P2P_BOOTSTRAP", [])
+            await self.p2p.start(
+                dht_port=CONFIG.get("P2P_PORT", 8468),
+                bootstrap_nodes=bootstrap
+            )
+            
+            # Start join request listener
+            asyncio.create_task(self.p2p.listen_for_join_requests(CONFIG["WG_PORT"]))
+            
+        except Exception as e:
+            print(f"⚠️ P2P network start failed: {e}")
+
     async def run_http_server(self):
         """🆕 运行 A2A HTTP 服务器"""
         try:
@@ -555,6 +604,49 @@ class SporeEntity:
                     print(f"\n👥 PEERS ({len(peers)}):")
                     for pid, pinfo in peers.items():
                         print(f" - {pid}: {pinfo.get('public_ipv6', 'N/A')} (VPN: {pinfo.get('vpn_ip', 'N/A')})")
+                elif cmd == "p2p" or cmd == "strangers":
+                    if self.p2p:
+                        pending = len(self.p2p.trust_gate.pending_requests)
+                        trusted = len(self.p2p.trust_gate.trusted_peers)
+                        print(f"\n🌐 P2P Network:")
+                        print(f"   Pending join requests: {pending}")
+                        print(f"   Trusted peers: {trusted}")
+                        print(f"   DHT running: {self.p2p.dht.running}")
+                        print(f"   Auto-approve: {self.p2p.trust_gate.auto_approve}")
+                    else:
+                        print("\n⚠️ P2P network not initialized")
+                elif cmd == "approve" and self.p2p:
+                    print("\n⏳ Pending requests:")
+                    for pk, req in self.p2p.trust_gate.pending_requests.items():
+                        print(f"   {pk[:16]}... - {req.get('intent', 'No intent')}")
+                    pubkey = input("Enter pubkey to approve (or 'all'): ").strip()
+                    if pubkey == "all":
+                        for pk in list(self.p2p.trust_gate.pending_requests.keys()):
+                            await self.p2p.trust_gate.approve_peer(pk)
+                    elif pubkey:
+                        await self.p2p.trust_gate.approve_peer(pubkey)
+                elif cmd == "find":
+                    if self.p2p:
+                        node_id = input("Enter node ID to find: ").strip()
+                        if node_id:
+                            info = await self.p2p.dht.find_node(node_id)
+                            if info:
+                                print(f"\n🔍 Found: {info.node_id[:16]}...")
+                                print(f"   VPN: {info.vpn_ip}")
+                                print(f"   IPv6: {info.ipv6}")
+                                print(f"   STUN: {info.ipv4_stun}")
+                            else:
+                                print("   Not found in DHT")
+                    else:
+                        print("⚠️ P2P network not initialized")
+                elif cmd == "connect":
+                    if self.p2p:
+                        node_id = input("Enter node ID to connect: ").strip()
+                        if node_id:
+                            success = await self.p2p.connect_to_peer(node_id)
+                            print(f"   {'✅ Connected!' if success else '❌ Failed'}")
+                    else:
+                        print("⚠️ P2P network not initialized")
                 elif cmd == "status":
                     print(f"\n{self.monitor.get_status()}")
                 elif cmd:
@@ -573,17 +665,25 @@ class SporeEntity:
 async def main():
     """
     主入口：启动为母巢，运行所有服务。
-    包含：阴影层、生命周期、HTTP 服务器、用户界面。
+    包含：阴影层、生命周期、HTTP 服务器、P2P 网络、用户界面。
     """
     queen = SporeEntity(is_hive=True)
     
     # 启动所有服务
-    await asyncio.gather(
+    tasks = [
         queen.run_shadow_layer(),      # UDP 监听 + WG 发现
         queen.run_lifecycle(),          # 心跳 + 监控
         queen.run_http_server(),        # A2A HTTP 接口
-        queen.user_interface()          # 交互界面
-    )
+    ]
+    
+    # 🆕 启动 P2P 网络（如果启用）
+    if queen.p2p:
+        tasks.append(queen.run_p2p_network())
+        print("🌐 P2P network layer enabled (DHT + STUN)")
+    
+    tasks.append(queen.user_interface())  # 交互界面
+    
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     print("🌙 SporeCiv A2A Network Node")

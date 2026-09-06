@@ -1,0 +1,34 @@
+# 敏感配置
+.env
+.env.*
+*.pem
+*.key
+privatekey
+publickey
+
+# 个人数据
+memory/
+.openclaw/
+pulse_yuehen/
+shadow_logs/
+historical_memories_processing_report.json
+yuehen_lme_summary_*.json
+
+# 临时文件
+*.log
+*.tmp
+*.pid
+nohup.out
+backups/
+hitl_logs/
+
+# 图片素材
+*.jpg
+*.png
+*.gif
+*.webp
+
+# 其他
+__pycache__/
+*.pyc
+.DS_Store
