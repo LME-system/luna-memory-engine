@@ -1,0 +1,8 @@
+{
+  "sender(上限)": 1.0,
+  "alone": 0.9,
+  "q+bridge": 1.0,
+  "q+bridge_shuffle(错配)": 1.0,
+  "q+random": 0.125,
+  "q+zero": 0.8
+}
