@@ -1,0 +1,32 @@
+{
+  "config": {
+    "sender": "Qwen/Qwen2.5-1.5B-Instruct",
+    "receiver": "Qwen/Qwen2.5-0.5B-Instruct",
+    "n_attr": 4,
+    "n_train": 300,
+    "n_test": 20,
+    "steps": 80,
+    "bs": 4,
+    "k": 16,
+    "basis": 64,
+    "quick": true,
+    "out": "v4_quick.json"
+  },
+  "results": {
+    "alone": 0.55,
+    "q+bridge": 1.0,
+    "shuffle": 1.0,
+    "null": 0.5,
+    "random": 0.55
+  },
+  "metrics": {
+    "cosine(方向)": 0.995,
+    "PR(有效维度)": 7.88,
+    "CKA(结构)": 0.692,
+    "L2(能量)": 790.01
+  },
+  "tokens": {
+    "bridge(前端生成token/题)": 0,
+    "text_relay(前端生成token/题)": 4.2
+  }
+}
