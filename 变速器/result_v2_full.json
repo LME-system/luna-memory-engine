@@ -1,0 +1,24 @@
+{
+  "config": {
+    "sender": "Qwen/Qwen2.5-1.5B-Instruct",
+    "receiver": "Qwen/Qwen2.5-0.5B-Instruct",
+    "n_attr": 4,
+    "n_train": 1500,
+    "n_test": 120,
+    "steps": 400,
+    "bs": 4,
+    "k": 16,
+    "rank": 128,
+    "quick": false,
+    "out": "v2_full.json"
+  },
+  "results": {
+    "sender(上限)": 0.975,
+    "receiver_alone": 0.5416666666666666,
+    "q+bridge": 1.0,
+    "bridge_only(铁证)": 0.0
+  },
+  "gap": 0.43333333333333335,
+  "gap_closed_q_bridge": 1.058,
+  "gap_closed_bridge_only": -1.25
+}
