@@ -1,0 +1,30 @@
+{
+  "config": {
+    "diff": 2,
+    "n_train": 150,
+    "n_test": 24,
+    "K": 16,
+    "cap": 48,
+    "gen_max": 64
+  },
+  "results": {
+    "sender_alone": 0.625,
+    "alone": 0.0,
+    "bridge": 0.042,
+    "text_relay": 0.0,
+    "shuffle": 0.042,
+    "const": 0.0,
+    "null": 0.208
+  },
+  "gap": 0.625,
+  "content_dependence(bridge-shuffle)": 0.0,
+  "metrics": {
+    "cosine(前缀题间)": 0.9999,
+    "PR": 3.46,
+    "前缀跨状态漂移": 1.519
+  },
+  "tokens": {
+    "bridge前端token": 0,
+    "text_relay前端token": 14.6
+  }
+}
