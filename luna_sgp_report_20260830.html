@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna SGP Report - 华尔街见闻快讯分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            color: #888;
+            font-size: 14px;
+        }
+        .header .meta {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+        .layer {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .layer-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .layer-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+        .layer-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .layer-subtitle {
+            font-size: 12px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .l1 .layer-icon { background: rgba(233, 69, 96, 0.2); }
+        .l2 .layer-icon { background: rgba(79, 172, 254, 0.2); }
+        .l3 .layer-icon { background: rgba(67, 233, 123, 0.2); }
+        .l4 .layer-icon { background: rgba(250, 112, 154, 0.2); }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #e94560;
+        }
+        .entity-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            background: rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .cluster {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+        .cluster-a { border-left-color: #e94560; }
+        .cluster-b { border-left-color: #4facfe; }
+        .cluster-c { border-left-color: #43e97b; }
+        .cluster-d { border-left-color: #fa709a; }
+        .cluster-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .cluster-desc {
+            font-size: 13px;
+            color: #aaa;
+        }
+        .chain {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .chain-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4facfe;
+        }
+        .chain-flow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .chain-node {
+            background: rgba(79, 172, 254, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .chain-arrow {
+            color: #666;
+        }
+        .signal {
+            display: flex;
+            align-items: flex-start;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .signal-level {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 12px;
+            white-space: nowrap;
+        }
+        .signal-high {
+            background: rgba(233, 69, 96, 0.3);
+            color: #ff6b6b;
+        }
+        .signal-med {
+            background: rgba(250, 204, 21, 0.3);
+            color: #facc15;
+        }
+        .signal-content {
+            flex: 1;
+        }
+        .signal-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .signal-desc {
+            font-size: 13px;
+            color: #aaa;
+        }
+        .investment-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .invest-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .invest-theme {
+            font-weight: 600;
+            color: #43e97b;
+            margin-bottom: 5px;
+        }
+        .invest-action {
+            font-size: 13px;
+            color: #aaa;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌙 Luna SGP (NeuroRAG) Report</h1>
+            <div class="subtitle">华尔街见闻快讯分析</div>
+            <div class="meta">2026年8月30日 21:45 | 12条快讯 | 4层推理 | 3条因果链 | 4个战略信号</div>
+        </div>
+
+        <div class="layer l1">
+            <div class="layer-header">
+                <div class="layer-icon">📊</div>
+                <div>
+                    <div class="layer-title">L1 符号层分析</div>
+                    <div class="layer-subtitle">Symbolic Processing - 实体提取与分类</div>
+                </div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">地缘政治</div>
+                    <div class="stat-value">5条 (42%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">科技/AI</div>
+                    <div class="stat-value">3条 (25%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">能源</div>
+                    <div class="stat-value">2条 (17%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">航天/半导体</div>
+                    <div class="stat-value">2条 (17%)</div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div style="font-size: 13px; color: #888; margin-bottom: 10px;">关键实体识别</div>
+                <div class="entity-tags">
+                    <span class="tag">🇮🇷 伊朗</span>
+                    <span class="tag">🇺🇸 美国</span>
+                    <span class="tag">🇨🇳 中国</span>
+                    <span class="tag">🇷🇺 俄罗斯</span>
+                    <span class="tag">🇪🇺 欧盟</span>
+                    <span class="tag">🚗 特斯拉</span>
+                    <span class="tag">💾 紫光国微</span>
+                    <span class="tag">👤 特朗普</span>
+                    <span class="tag">👤 普京</span>
+                    <span class="tag">👤 泽连斯基</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="layer l2">
+            <div class="layer-header">
+                <div class="layer-icon">📐</div>
+                <div>
+                    <div class="layer-title">L2 几何层分析</div>
+                    <div class="layer-subtitle">Geometric Clustering - 语义相似度聚类</div>
+                </div>
+            </div>
+            <div class="cluster cluster-a">
+                <div class="cluster-title">🔴 聚类A - 中东/伊朗地缘 (4条)</div>
+                <div class="cluster-desc">上合峰会、美以是敌、霍尔木兹海峡、CIA访俄</div>
+            </div>
+            <div class="cluster cluster-b">
+                <div class="cluster-title">🔵 聚类B - 能源危机 (2条)</div>
+                <div class="cluster-desc">欧盟天然气储备、霍尔木兹通行受限</div>
+            </div>
+            <div class="cluster cluster-c">
+                <div class="cluster-title">🟢 聚类C - 科技/AI (3条)</div>
+                <div class="cluster-desc">人形机器人量产、AI云支出、紫光国微航天</div>
+            </div>
+            <div class="cluster cluster-d">
+                <div class="cluster-title">🟡 聚类D - 欧美关系 (2条)</div>
+                <div class="cluster-desc">欧洲优先级降级、德国G20施压</div>
+            </div>
+        </div>
+
+        <div class="layer l3">
+            <div class="layer-header">
+                <div class="layer-icon">🕸️</div>
+                <div>
+                    <div class="layer-title">L3 拓扑层分析</div>
+                    <div class="layer-subtitle">Topological Relations - 关系网络与因果链</div>
+                </div>
+            </div>
+            <div class="chain">
+                <div class="chain-title">链1: 能源危机链</div>
+                <div class="chain-flow">
+                    <span class="chain-node">美伊紧张</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">霍尔木兹受限</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">欧盟能源危机加剧</span>
+                </div>
+            </div>
+            <div class="chain">
+                <div class="chain-title">链2: 战略转移链</div>
+                <div class="chain-flow">
+                    <span class="chain-node">俄乌战争持续</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">美国重心东移</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">欧洲安全降级</span>
+                </div>
+            </div>
+            <div class="chain">
+                <div class="chain-title">链3: AI垄断链</div>
+                <div class="chain-flow">
+                    <span class="chain-node">AI产业繁荣</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">云巨头垄断利润</span>
+                    <span class="chain-arrow">→</span>
+                    <span class="chain-node">科技自主诉求</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="layer l4">
+            <div class="layer-header">
+                <div class="layer-icon">🎯</div>
+                <div>
+                    <div class="layer-title">L4 编排层分析</div>
+                    <div class="layer-subtitle">Orchestration & Strategy - 策略与投资决策</div>
+                </div>
+            </div>
+            <div class="signal">
+                <span class="signal-level signal-high">HIGH</span>
+                <div class="signal-content">
+                    <div class="signal-title">欧盟能源危机恶化</div>
+                    <div class="signal-desc">冬季前储气降至13年最低(63%)，地缘风险溢价上升</div>
+                </div>
+            </div>
+            <div class="signal">
+                <span class="signal-level signal-high">HIGH</span>
+                <div class="signal-content">
+                    <div class="signal-title">美国战略重心东移</div>
+                    <div class="signal-desc">欧洲安全优先级降至第四，北约格局面临重塑</div>
+                </div>
+            </div>
+            <div class="signal">
+                <span class="signal-level signal-med">MED</span>
+                <div class="signal-content">
+                    <div class="signal-title">AI算力集中度风险</div>
+                    <div class="signal-desc">云巨头拿走40%利润，反垄断与自主可控诉求增强</div>
+                </div>
+            </div>
+            <div class="signal">
+                <span class="signal-level signal-med">MED</span>
+                <div class="signal-content">
+                    <div class="signal-title">机器人产业化加速</div>
+                    <div class="signal-desc">欧洲首座人形机器人量产基地投产，中塞合作模式</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div style="font-size: 13px; color: #888; margin-bottom: 15px;">投资含义</div>
+                <div class="investment-grid">
+                    <div class="invest-card">
+                        <div class="invest-theme">⛽ 能源</div>
+                        <div class="invest-action">欧洲天然气危机 → 关注LNG、储能、替代能源</div>
+                    </div>
+                    <div class="invest-card">
+                        <div class="invest-theme">🌍 地缘</div>
+                        <div class="invest-action">中东紧张+俄乌持续 → 黄金、原油波动率上升</div>
+                    </div>
+                    <div class="invest-card">
+                        <div class="invest-theme">💻 科技</div>
+                        <div class="invest-action">AI云集中度 → 边缘计算、国产算力、反垄断</div>
+                    </div>
+                    <div class="invest-card">
+                        <div class="invest-theme">🚀 航天</div>
+                        <div class="invest-action">中美太空竞赛 → 商业航天、卫星产业链</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Luna SGP (NeuroRAG) v4.2.0 | 四层语义推理系统 | 生成时间: 2026-08-30 21:47
+        </div>
+    </div>
+</body>
+</html>

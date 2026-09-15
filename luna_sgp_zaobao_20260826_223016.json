@@ -1,0 +1,4 @@
+{
+  "raw": "Error: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=180)",
+  "_processing_time": "180.0s"
+}

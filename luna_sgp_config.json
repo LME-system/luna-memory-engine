@@ -1,0 +1,31 @@
+{
+  "version": "4.2.1",
+  "last_updated": "2026-08-26",
+  "primary_model": {
+    "name": "gemma4:31b",
+    "size": "19GB",
+    "status": "active",
+    "reason": "稳定性高，输出质量优秀"
+  },
+  "fallback_models": [
+    {
+      "name": "gemma4:12b",
+      "size": "7.6GB",
+      "status": "downloading",
+      "reason": "速度更快，待测试稳定性"
+    }
+  ],
+  "cloud_backup": {
+    "name": "kimi",
+    "status": "available",
+    "trigger": "本地模型超时或失败"
+  },
+  "optimization": {
+    "context_window": "default (不手动设置)",
+    "output_format": "纯文本 (避免JSON)",
+    "call_method": "命令行 ollama run (替代HTTP API)",
+    "timeout": "300秒",
+    "retry": "3次，指数退避"
+  },
+  "notes": "2026-08-26 主人决策：优先使用 Gemma 4 31B 运行 Luna SGP"
+}

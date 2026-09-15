@@ -1,0 +1,7 @@
+Luna SGP 测试总结与优化建议
+======================================================================
+模型: Gemma 4 31B
+时间: 2026-08-26 23:08:05
+耗时: 180.0s
+
+Error: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=180)
