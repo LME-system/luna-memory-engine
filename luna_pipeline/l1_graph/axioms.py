@@ -9,15 +9,40 @@ from typing import Any, Dict, List
 from models import Rule
 
 
+_DIRECTIONS = ("eq", "gt", "gte", "lt", "lte")
+
+
+def _parse_fact(val: Any):
+    """事实值 → (value, cmp)。支持方向保真: {"value":4,"cmp":"gt"} 表示'高于4'。"""
+    if isinstance(val, dict):
+        v = val.get("value", val.get("v"))
+        c = str(val.get("cmp", val.get("op", "eq"))).lower()
+        return v, (c if c in _DIRECTIONS else "eq")
+    return val, "eq"
+
+
 def _cmp(op: str, val: Any, thr: Any) -> bool:
+    """判定事实 val 是否落在公理 (op, thr) 的满足域内。
+
+    方向保真: '高于4%' 记为 (4, 'gt'), 与公理 gt 4 相交 → 命中 (边界安全)。
+    纯相等值 (4, 'eq') 对 gt 4 不命中。
+    """
+    value, cmp = _parse_fact(val)
     try:
-        if op == "gt":  return val > thr
-        if op == "gte": return val >= thr
-        if op == "lt":  return val < thr
-        if op == "lte": return val <= thr
-        if op == "eq":  return val == thr
-        if op == "in":  return val in (thr or [])
-        if op == "is_false": return val is False or val in (0, "false", "False", None)
+        if op == "is_false":
+            return (value is False) or (cmp == "eq" and value in (0, "false", "False", None))
+        if op == "eq":
+            return cmp == "eq" and value == thr
+        if op == "in":
+            return cmp == "eq" and value in (thr or [])
+        if op == "gt":
+            return value > thr or (cmp in ("gt", "gte") and value >= thr)
+        if op == "gte":
+            return value >= thr or (cmp in ("gt", "gte") and value >= thr)
+        if op == "lt":
+            return value < thr or (cmp in ("lt", "lte") and value <= thr)
+        if op == "lte":
+            return value <= thr or (cmp in ("lt", "lte") and value <= thr)
     except TypeError:
         return False
     return False
@@ -69,3 +94,15 @@ def verify_conclusion(conclusion_violates: List[str]) -> Dict[str, Any]:
 
 def all_axioms() -> List[Dict[str, Any]]:
     return [r.to_props() for r in AXIOMS]
+
+
+def axiom_field_spec() -> List[Dict[str, Any]]:
+    """公理字段清单 (单一真源) — 供 extract prompt 动态构建, 保证 prompt 与公理不脱节。"""
+    hints = {
+        "premium_ratio": "收购溢价倍数 (数值)",
+        "control_confidence": "实控人控制置信度 (数值 0..1)",
+        "liquidity_support": "是否存在流动性支撑 (布尔 true/false)",
+        "core_inflation_yoy": "核心通胀同比 (数值, 百分数去 % 如 4.5)",
+    }
+    return [{"axiom": r.id, "field": r.field, "op": r.op, "threshold": r.threshold,
+             "meaning": r.conclusion, "hint": hints.get(r.field, "")} for r in AXIOMS]

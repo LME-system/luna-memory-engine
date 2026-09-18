@@ -29,7 +29,7 @@ Graph-Service(:8001)  Geo-Service(:8002)  Mind-Service(:8003)
 ## 实施顺序（架构决策文档：渐进演进, L1→L4→L2→L3）
 
 - [x] **P0 基础设施**：Neo4j(Docker) + Redis + 项目骨架 `✅ 2026-09-17`
-- [x] **P1 L1**：Graph-Service；图模型 + AX 公理编码 `✅ 2026-09-17`
+- [x] **P1 L1**：Graph-Service；图模型 + AX 公理编码 + 方向保真比较 `✅ 2026-09-17 / 09-18`
   - `docker compose up -d` → luna-neo4j(:7474/:7687) + luna-redis(:6379)
   - `l1_graph/`：models / axioms / graph_client / service(:8001) / ingest
   - 验收：光智科技案例 → AX-002 高溢价 + AX-001 控制权 触发，(Fact)-[:TRIGGERS]->(Rule) 路径可查
@@ -41,7 +41,11 @@ Graph-Service(:8001)  Geo-Service(:8002)  Mind-Service(:8003)
   - `l4_mind/service.py`(:8003)：/health /orchestrate /extract /synthesize
   - L2/L3 未就绪时优雅降级 (not_ready/skipped)，不阻断链路
   - 验收：光智案例 trace=extract→symbolic[AX-002]→geometry:not_ready→topology:skipped→verify→synthesize ✓
-  - ⚠️ 待办：extract 的公理字段映射需加强（BoE 通胀案例未被映射到 core_inflation_yoy → 未触发 AX-004）
+  - ✅ 2026-09-18 修复 extract 公理字段映射（BoE 通胀案例现已触发 AX-004）：
+    - **单一真源**：`axioms.axiom_field_spec()` 动态生成 extract prompt 的字段清单，prompt 与公理不再脱节
+    - **方向保真**：事实值支持 `{"value":X,"cmp":"gt|gte|lt|lte"}`，"高于4%" 不再退化成"等于4"；`_cmp` 改为区间相交（边界安全）
+    - **结构化输出**：ollama `format` JSON schema 约束外层结构；温度 0
+    - 回归：`l1_graph/test_axioms.py` 全过（含方向保真）；`/orchestrate` BoE 案例 trace 出现 `symbolic:rules=['AX-004']`
 - [x] **P3 L2**：Geo-Service(:8002) —— nomic-embed(768d) → Dual-Embedding(欧氏余弦 + Poincaré expmap0) + 测地线 + 形状同构 + 冲突升维 `✅ 2026-09-18`
   - `l2_geo/`：embedding.py / manifold.py / service.py，独立 venv `.venv_geo`(geoopt 0.5.1 + torch 2.8)
   - 接口 /health /project /analogy /upscale /embed 全通；与 L4 打通(geometry:ok)
