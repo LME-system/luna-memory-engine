@@ -42,19 +42,21 @@ class GraphClient:
 
     # ---------- 写入 ----------
     def upsert_entity(self, e: Dict[str, Any]):
+        eid = e.get("id") or e.get("name", "unknown").replace(" ", "_").lower()
         with self._d.session() as s:
             s.run(
                 "MERGE (n:Entity {id:$id}) SET n.name=$name, n.type=$type, n += $props",
-                id=e["id"], name=e["name"], type=e.get("type", "Unknown"),
+                id=eid, name=e.get("name", "Unknown"), type=e.get("type", "Unknown"),
                 props=e.get("props", {}),
             )
 
     def upsert_fact(self, f: Dict[str, Any]):
+        fid = f.get("id") or f.get("content", "unknown")[:40].replace(" ", "_").lower()
         with self._d.session() as s:
             s.run(
                 "MERGE (n:Fact {id:$id}) SET n.content=$content, n.strength=$strength, "
                 "n.confidence=$confidence, n.source=$source, n.ts=$ts",
-                id=f["id"], content=f.get("content", ""), strength=f.get("strength", 0.5),
+                id=fid, content=f.get("content", ""), strength=f.get("strength", 0.5),
                 confidence=f.get("confidence", 0.8), source=f.get("source"),
                 ts=f.get("ts"),
             )

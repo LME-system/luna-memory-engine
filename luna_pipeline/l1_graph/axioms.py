@@ -17,6 +17,7 @@ LEVEL_SCALES: Dict[str, List[str]] = {
     "policy_tightening_probability": ["unlikely", "possible", "likely", "near_certain"],
     "liquidity_stress": ["none", "mild", "severe"],
     "governance_risk": ["low", "moderate", "high"],
+    "ai_embodiment_level": ["digital_only", "hybrid", "physical_lab", "full_automation"],
 }
 
 _TRUEISH = (True, 1, "true", "True", "yes", "是")
@@ -101,6 +102,19 @@ AXIOMS: List[Rule] = [
     Rule(id="AX-008", name="流动性压力严峻", field="liquidity_stress", op="level_gte",
          threshold="severe", conclusion="流动性压力严峻 → 再融资风险", severity="high",
          confidence=0.72),
+    # --- AI 产业/安全/生物融合公理 ---
+    Rule(id="AX-009", name="AI实体化临界点", field="ai_embodiment_level", op="level_gte",
+         threshold="physical_lab", conclusion="AI 实体化临界点：从模拟进入物理闭环", severity="high",
+         confidence=0.80),
+    Rule(id="AX-010", name="AI安全叙事升温", field="ai_safety_concern", op="is_true",
+         conclusion="AI 安全叙事升温 → 监管/放缓/第三方评估预期", severity="medium",
+         confidence=0.75),
+    Rule(id="AX-011", name="递归自我改进信号", field="ai_self_improvement", op="is_true",
+         conclusion="递归自我改进信号 → 能力跃迁/控制忧虑", severity="high",
+         confidence=0.78),
+    Rule(id="AX-012", name="AI生物融合", field="bio_ai_integration", op="is_true",
+         conclusion="AI-生物融合 → 罕见病/药物研发范式转移", severity="medium",
+         confidence=0.72),
 ]
 
 
@@ -149,6 +163,10 @@ def axiom_field_spec() -> List[Dict[str, Any]]:
         "policy_tightening_probability": "央行收紧政策的可能性 (定性)",
         "related_party_deal": "是否关联方交易 (布尔 true/false)",
         "liquidity_stress": "流动性压力等级 (定性)",
+        "ai_embodiment_level": "AI 实体化等级 (定性: digital_only/hybrid/physical_lab/full_automation)",
+        "ai_safety_concern": "是否存在 AI 安全担忧、监管呼吁或放缓开发 (布尔 true/false)",
+        "ai_self_improvement": "是否提及递归自我改进、AI 自我迭代或自主运行 (布尔 true/false)",
+        "bio_ai_integration": "是否 AI 与生物学/药物研发/实体实验室融合 (布尔 true/false)",
     }
     return [{"axiom": r.id, "field": r.field, "op": r.op, "threshold": r.threshold,
              "meaning": r.conclusion, "hint": hints.get(r.field, ""),

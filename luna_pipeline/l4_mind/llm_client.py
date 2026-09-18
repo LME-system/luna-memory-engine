@@ -62,6 +62,10 @@ def chat(system: str, user: str, num_predict: int = 1200, temperature: float = 0
 
 
 # ---- extract 公理字段清单: 从 L1 axioms 动态生成 (单一真源) ----
+import sys, os
+_L1_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "l1_graph")
+if _L1_DIR not in sys.path:
+    sys.path.insert(0, _L1_DIR)
 try:
     import axioms as _AX
     _AXSPEC = _AX.axiom_field_spec()
@@ -133,7 +137,7 @@ EXTRACT_FORMAT = {
             "type": "object",
             "properties": {"id": {"type": "string"}, "name": {"type": "string"},
                            "type": {"type": "string"}},
-            "required": ["name", "type"]}},
+            "required": ["id", "name", "type"]}},
         "facts": {"type": "array", "items": {
             "type": "object",
             "properties": {"id": {"type": "string"}, "content": {"type": "string"},
