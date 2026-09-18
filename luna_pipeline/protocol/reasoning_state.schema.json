@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luna.openclaw.ai/schema/v1/reasoning_state.json",
+  "title": "Luna ReasoningState (JSON-LD)",
+  "type": "object",
+  "required": ["input", "symbolic_layer", "geometric_layer", "topological_layer", "output"],
+  "properties": {
+    "@context": { "const": "https://luna.openclaw.ai/schema/v1" },
+    "@type": { "const": "ReasoningState" },
+    "input": {
+      "type": "object",
+      "required": ["text", "entities"],
+      "properties": {
+        "text": { "type": "string" },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "type"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "symbolic_layer": {
+      "type": "object",
+      "required": ["facts", "triggered_rules", "confidence"],
+      "properties": {
+        "facts": { "type": "array" },
+        "triggered_rules": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "geometric_layer": {
+      "type": "object",
+      "required": ["embedding", "dimension", "neighbors"],
+      "properties": {
+        "embedding": { "type": "array", "items": { "type": "number" } },
+        "dimension": { "type": "integer" },
+        "space": { "enum": ["euclidean", "poincare"] },
+        "neighbors": { "type": "array" },
+        "geodesic_distances": { "type": "array", "items": { "type": "number" } },
+        "isomorphism": {
+          "type": "object",
+          "properties": {
+            "matched_case": { "type": "string" },
+            "similarity": { "type": "number" }
+          }
+        }
+      }
+    },
+    "topological_layer": {
+      "type": "object",
+      "properties": {
+        "holes": { "type": "array" },
+        "persistence": { "type": "array" },
+        "fractal_dim": { "type": "number" },
+        "critical_transition": { "type": ["object", "null"] }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["conclusion", "confidence"],
+      "properties": {
+        "conclusion": { "type": "string" },
+        "explanation": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

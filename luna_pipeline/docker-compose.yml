@@ -1,0 +1,23 @@
+services:
+  neo4j:
+    image: neo4j:5
+    container_name: luna-neo4j
+    ports:
+      - "7474:7474"   # HTTP / Browser
+      - "7687:7687"   # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/luna_sgp_local
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - ./data/neo4j:/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: luna-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    restart: unless-stopped

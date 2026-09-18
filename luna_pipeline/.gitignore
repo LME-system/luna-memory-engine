@@ -1,0 +1,13 @@
+# 虚拟环境
+.venv/
+.venv_geo/
+.venv_topo/
+.cache/
+
+# Neo4j/Redis 数据卷
+data/
+
+# 运行产物
+*.log
+__pycache__/
+*.pyc
