@@ -24,6 +24,7 @@ app = FastAPI(title="Luna Geo-Service", version="0.1.0")
 class ProjectBody(BaseModel):
     entities: List[Dict[str, Any]] = []
     texts: List[str] = []
+    labels: List[str] = []      # 显式点标签 (实体名 / fact id / DOC); 空则从 entities 推
     k: int = 5
 
 
@@ -45,12 +46,17 @@ class EmbedBody(BaseModel):
 
 
 def _labels_texts(body: ProjectBody):
-    names = [e.get("name") for e in body.entities if e.get("name")]
-    texts = body.texts[:] or names
-    labels = names[:len(texts)]
+    # 优先用显式 labels (L4 传入: 实体+事实节点)
+    if body.labels and body.texts:
+        labels = list(body.labels)
+        texts = list(body.texts)
+    else:
+        names = [e.get("name") for e in body.entities if e.get("name")]
+        texts = body.texts[:] or names
+        labels = names[:len(texts)]
     if len(labels) < len(texts):
         labels += [f"t{i}" for i in range(len(labels), len(texts))]
-    return labels, texts
+    return labels[:len(texts)], texts
 
 
 @app.get("/health")

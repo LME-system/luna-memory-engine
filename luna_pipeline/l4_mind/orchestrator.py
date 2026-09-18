@@ -59,10 +59,47 @@ def node_symbolic(state: State) -> State:
     return {"symbolic": symbolic, "trace": _t(state, f"symbolic:rules={symbolic['triggered_rules']}")}
 
 
+def _build_points(state: State):
+    """构造 L2 投影点集: 图节点(实体[带事实上下文] + 事实) + 文档锚点。
+    对齐 6/28 文档 '图节点 → 几何坐标' (节点含 Entity 与 Fact)。去重后返回 (labels, texts)。
+    """
+    import re
+    ents = state.get("entities") or []
+    facts = state.get("facts") or []
+    pts = []            # (label, text)
+    seen = set()
+
+    def key(s):
+        return re.sub(r"\W", "", s or "")[:80]
+
+    for e in ents:
+        name = e.get("name")
+        if not name:
+            continue
+        ctx = [f.get("content", "") for f in facts if name in (f.get("content", "") or "")]
+        text = name + ("：" + "；".join(c for c in ctx if c) if ctx else "")
+        if key(text) in seen:
+            continue
+        seen.add(key(text)); pts.append((name, text))
+
+    for i, f in enumerate(facts):
+        c = (f.get("content") or "").strip()
+        if not c or key(c) in seen:
+            continue
+        seen.add(key(c)); pts.append((f.get("id") or f"fact{i}", c))
+
+    doc = (state.get("input_text") or "").strip()
+    if doc and key(doc) not in seen:
+        pts.append(("DOC", doc))
+
+    return [p[0] for p in pts], [p[1] for p in pts]
+
+
 def node_geometry(state: State) -> State:
-    texts = [state.get("input_text", "")] + [e.get("name", "") for e in state.get("entities", [])]
-    res = C.l2_project(state.get("entities", []), texts)
+    labels, texts = _build_points(state)
+    res = C.l2_project(state.get("entities", []), texts, labels=labels)
     res.setdefault("status", "not_ready" if "__error__" in res else "ok")
+    res.setdefault("n_points", len(texts))
     return {"geometric": res, "trace": _t(state, f"geometry:{res.get('status')}")}
 
 

@@ -29,9 +29,12 @@ def l1_verify(violates: list):
     return _post(L1, "/verify", {"violates": violates})
 
 
-def l2_project(entities: list, texts: list):
-    """L2 几何层：投影到流形空间 (P3 实现前返回 not_ready)。"""
-    return _post(L2, "/project", {"entities": entities, "texts": texts})
+def l2_project(entities: list, texts: list, labels: list = None):
+    """L2 几何层：投影到流形空间。labels 显式指定点标签(实体名/fact id/DOC)。"""
+    body = {"entities": entities, "texts": texts}
+    if labels:
+        body["labels"] = labels
+    return _post(L2, "/project", body)
 
 
 def l3_analyze(points: list):

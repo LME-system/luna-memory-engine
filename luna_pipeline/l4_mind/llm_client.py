@@ -1,28 +1,64 @@
-"""LLM 客户端 — 本地 ollama gemma4:31b (chat + think=false)。
+"""LLM 客户端 — 可切换引擎:
+  LUNA_LLM_PROVIDER=ollama  (默认) 本地 gemma4:31b
+  LUNA_LLM_PROVIDER=deepseek       DeepSeek (openai-compatible)
 用于 L4 的实体提取 (extract) 与综合输出 (synthesize)。
 """
 from __future__ import annotations
 import json, urllib.request, os
 
+PROVIDER = os.getenv("LUNA_LLM_PROVIDER", "ollama").lower()
 OLLAMA = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat")
-MODEL = os.getenv("LUNA_LLM", "gemma4:31b")
 
 
-def chat(system: str, user: str, num_predict: int = 1200, temperature: float = 0.3,
-         timeout: int = 600, fmt=None) -> str:
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        "stream": False, "think": False,
-        "options": {"num_predict": num_predict, "temperature": temperature},
-    }
+def _deepseek_cfg():
+    base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    model = os.getenv("LUNA_LLM", "deepseek-flash")
+    key = os.getenv("DEEPSEEK_API_KEY", "")
+    if not key:  # 从 openclaw 配置读取
+        try:
+            cfg = json.load(open(os.path.expanduser("~/.openclaw/openclaw.json")))
+            ds = cfg["models"]["providers"]["deepseek"]
+            key = ds.get("apiKey", ""); base = ds.get("baseUrl", base)
+            model = os.getenv("LUNA_LLM") or ds.get("models", [{}])[0].get("id", model)
+        except Exception:
+            pass
+    return base.rstrip("/"), key, model
+
+
+def _chat_ollama(system, user, num_predict, temperature, timeout, fmt):
+    model = os.getenv("LUNA_LLM", "gemma4:31b")
+    payload = {"model": model, "stream": False, "think": False,
+               "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+               "options": {"num_predict": num_predict, "temperature": temperature}}
     if fmt is not None:
         payload["format"] = fmt           # ollama 结构化输出 (JSON schema)
     req = urllib.request.Request(OLLAMA, data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode()).get("message", {}).get("content", "")
+
+
+def _chat_deepseek(system, user, num_predict, temperature, timeout, fmt):
+    base, key, model = _deepseek_cfg()
+    payload = {"model": model, "stream": False,
+               "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+               "temperature": temperature, "max_tokens": num_predict}
+    if fmt is not None:
+        payload["response_format"] = {"type": "json_object"}
+    req = urllib.request.Request(base + "/chat/completions",
+                                 data=json.dumps(payload).encode(),
+                                 headers={"Content-Type": "application/json",
+                                          "Authorization": "Bearer " + key})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.loads(r.read().decode())
-    return d.get("message", {}).get("content", "")
+    return d.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+
+def chat(system: str, user: str, num_predict: int = 1200, temperature: float = 0.3,
+         timeout: int = 600, fmt=None) -> str:
+    if PROVIDER == "deepseek":
+        return _chat_deepseek(system, user, num_predict, temperature, timeout, fmt)
+    return _chat_ollama(system, user, num_predict, temperature, timeout, fmt)
 
 
 # ---- extract 公理字段清单: 从 L1 axioms 动态生成 (单一真源) ----
@@ -108,17 +144,35 @@ EXTRACT_FORMAT = {
 }
 
 
+def _np(ollama_val: int, deepseek_val: int) -> int:
+    """DeepSeek 是推理模型, reasoning 会吃掉 max_tokens → 给它更大额度。"""
+    return deepseek_val if PROVIDER == "deepseek" else ollama_val
+
+
 def extract(text: str) -> dict:
-    try:
-        raw = chat(EXTRACT_SYSTEM, text, num_predict=800, temperature=0.0, fmt=EXTRACT_FORMAT)
-    except Exception:
-        raw = chat(EXTRACT_SYSTEM, text, num_predict=800, temperature=0.0)
-    return _parse_json(raw)
+    np_ = _np(800, 3000)
+    d = {}
+    for _ in range(3):                      # 间歇性空返回 → 重试
+        try:
+            raw = chat(EXTRACT_SYSTEM, text, num_predict=np_, temperature=0.0, fmt=EXTRACT_FORMAT)
+        except Exception:
+            raw = chat(EXTRACT_SYSTEM, text, num_predict=np_, temperature=0.0)
+        d = _parse_json(raw)
+        if d.get("entities") or d.get("facts"):
+            return d
+    return d
 
 
 SYNTH_SYSTEM = """你是 Luna SGP 编排层的综合器。基于给定的符号/几何/拓扑/验证结果，
 输出：结论、解释、置信度。锐利、密度高、不空话。只输出 JSON：
 {"conclusion": "...", "explanation": "...", "confidence": 0.0}"""
+
+SYNTH_FORMAT = {
+    "type": "object",
+    "properties": {"conclusion": {"type": "string"}, "explanation": {"type": "string"},
+                   "confidence": {"type": "number"}},
+    "required": ["conclusion"],
+}
 
 
 def _slim_geo(geo, max_points: int = 40):
@@ -151,8 +205,16 @@ def synthesize(state: dict) -> dict:
         "topological": _slim_topo(state.get("topological")),
         "verification": state.get("verification"),
     }, ensure_ascii=False)
-    raw = chat(SYNTH_SYSTEM, user, num_predict=1000, temperature=0.4)
-    d = _parse_json(raw)
+    np_ = _np(1000, 4000)
+    d = {}
+    for _ in range(2):                      # 空返回 → 重试
+        try:
+            raw = chat(SYNTH_SYSTEM, user, num_predict=np_, temperature=0.4, fmt=SYNTH_FORMAT)
+        except Exception:
+            raw = chat(SYNTH_SYSTEM, user, num_predict=np_, temperature=0.4)
+        d = _parse_json(raw)
+        if d.get("conclusion"):
+            break
     d.setdefault("conclusion", "")
     d.setdefault("explanation", "")
     d.setdefault("confidence", 0.5)
