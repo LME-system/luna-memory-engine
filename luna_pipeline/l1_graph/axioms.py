@@ -11,6 +11,16 @@ from models import Rule
 
 _DIRECTIONS = ("eq", "gt", "gte", "lt", "lte")
 
+# 有序等级标度 (定性 → 可比较): 供 level_* 公理使用。低 → 高。
+LEVEL_SCALES: Dict[str, List[str]] = {
+    "inflation_pressure": ["low", "moderate", "high", "very_high"],
+    "policy_tightening_probability": ["unlikely", "possible", "likely", "near_certain"],
+    "liquidity_stress": ["none", "mild", "severe"],
+    "governance_risk": ["low", "moderate", "high"],
+}
+
+_TRUEISH = (True, 1, "true", "True", "yes", "是")
+
 
 def _parse_fact(val: Any):
     """事实值 → (value, cmp)。支持方向保真: {"value":4,"cmp":"gt"} 表示'高于4'。"""
@@ -21,16 +31,36 @@ def _parse_fact(val: Any):
     return val, "eq"
 
 
-def _cmp(op: str, val: Any, thr: Any) -> bool:
+def _rank(field: str, label: Any):
+    """把等级标签映射到序号; 未知返回 None。"""
+    scale = LEVEL_SCALES.get(field)
+    if not scale or not isinstance(label, str):
+        return None
+    key = label.strip().lower().replace("-", "_").replace(" ", "_")
+    return scale.index(key) if key in scale else None
+
+
+def _cmp(op: str, val: Any, thr: Any, field: Optional[str] = None) -> bool:
     """判定事实 val 是否落在公理 (op, thr) 的满足域内。
 
-    方向保真: '高于4%' 记为 (4, 'gt'), 与公理 gt 4 相交 → 命中 (边界安全)。
-    纯相等值 (4, 'eq') 对 gt 4 不命中。
+    - 数值: 方向保真 (区间相交, 边界安全)。'高于4%'=(4,'gt') 命中 gt 4; '等于4' 不命中。
+    - 等级 (level_*): 按 LEVEL_SCALES 序号比较。
+    - 布尔: is_true / is_false。
     """
     value, cmp = _parse_fact(val)
+
+    if op in ("level_gte", "level_gt", "level_lte", "level_lt"):
+        rv, rt = _rank(field, value), _rank(field, thr)
+        if rv is None or rt is None:
+            return False
+        return {"level_gte": rv >= rt, "level_gt": rv > rt,
+                "level_lte": rv <= rt, "level_lt": rv < rt}[op]
+
     try:
         if op == "is_false":
-            return (value is False) or (cmp == "eq" and value in (0, "false", "False", None))
+            return (value is False) or (cmp == "eq" and value in (0, "false", "False", "no", None))
+        if op == "is_true":
+            return (value is True) or (cmp == "eq" and value in _TRUEISH)
         if op == "eq":
             return cmp == "eq" and value == thr
         if op == "in":
@@ -59,6 +89,18 @@ AXIOMS: List[Rule] = [
          conclusion="支撑结构断裂 / 流动性坍缩", severity="high", confidence=0.75),
     Rule(id="AX-004", name="二次通胀螺旋", field="core_inflation_yoy", op="gt", threshold=4.0,
          conclusion="通胀二轮传导 → 央行被迫鹰派", severity="medium", confidence=0.80),
+    # --- 定性/等级公理 (覆盖无数值的定性证据) ---
+    Rule(id="AX-005", name="通胀压力高企", field="inflation_pressure", op="level_gte",
+         threshold="high", conclusion="通胀压力高企 → 紧缩预期升温", severity="medium",
+         confidence=0.70),
+    Rule(id="AX-006", name="政策转鹰概率", field="policy_tightening_probability", op="level_gte",
+         threshold="likely", conclusion="央行转向鹰派概率上升", severity="medium",
+         confidence=0.70),
+    Rule(id="AX-007", name="关联交易", field="related_party_deal", op="is_true",
+         conclusion="关联交易 → 利益输送/掏空风险", severity="high", confidence=0.70),
+    Rule(id="AX-008", name="流动性压力严峻", field="liquidity_stress", op="level_gte",
+         threshold="severe", conclusion="流动性压力严峻 → 再融资风险", severity="high",
+         confidence=0.72),
 ]
 
 
@@ -67,7 +109,7 @@ def check_axiom(facts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     triggered: List[Dict[str, Any]] = []
     for f in facts:
         for r in AXIOMS:
-            if r.field in f and _cmp(r.op, f[r.field], r.threshold):
+            if r.field in f and _cmp(r.op, f[r.field], r.threshold, field=r.field):
                 triggered.append({
                     "rule_id": r.id,
                     "name": r.name,
@@ -103,6 +145,11 @@ def axiom_field_spec() -> List[Dict[str, Any]]:
         "control_confidence": "实控人控制置信度 (数值 0..1)",
         "liquidity_support": "是否存在流动性支撑 (布尔 true/false)",
         "core_inflation_yoy": "核心通胀同比 (数值, 百分数去 % 如 4.5)",
+        "inflation_pressure": "通胀压力等级 (定性)",
+        "policy_tightening_probability": "央行收紧政策的可能性 (定性)",
+        "related_party_deal": "是否关联方交易 (布尔 true/false)",
+        "liquidity_stress": "流动性压力等级 (定性)",
     }
     return [{"axiom": r.id, "field": r.field, "op": r.op, "threshold": r.threshold,
-             "meaning": r.conclusion, "hint": hints.get(r.field, "")} for r in AXIOMS]
+             "meaning": r.conclusion, "hint": hints.get(r.field, ""),
+             "scale": LEVEL_SCALES.get(r.field)} for r in AXIOMS]

@@ -35,6 +35,11 @@ Graph-Service(:8001)  Geo-Service(:8002)  Mind-Service(:8003)
   - 验收：光智科技案例 → AX-002 高溢价 + AX-001 控制权 触发，(Fact)-[:TRIGGERS]->(Rule) 路径可查
   - 接口 /health /ingest /query /check_axiom /verify /stats 全通
   - ⚠️ 注：v4.0 的 CPR/MCMC 代码在仓里已不存在（luna_v4 空），图模型按 6/28 文档重建
+  - ✅ 2026-09-18 公理库扩至 8 条，新增**定性/等级公理**覆盖无数值证据：
+    - AX-005 通胀压力高企(inflation_pressure ≥ high) / AX-006 政策转鹰(policy_tightening_probability ≥ likely)
+    - AX-007 关联交易(related_party_deal is_true) / AX-008 流动性压力严峻(liquidity_stress ≥ severe)
+    - 新增 `level_gte/gt/lte/lt`（按 `LEVEL_SCALES` 有序等级比较）与 `is_true` 算子
+    - 等级标度可在 `axioms.LEVEL_SCALES` 扩展；`axiom_field_spec()` 自动带出可选等级到 extract prompt
 - [x] **P2 L4**：LangGraph 编排骨架 `✅ 2026-09-17`
   - `l4_mind/orchestrator.py`：StateGraph `extract→symbolic→route→(geometry→topology→upscale?)→verify→synthesize`
   - 条件边：公理 conf≥0.9 走快速路径(直答)；否则进 L2/L3 增强；拓扑临界→upscale

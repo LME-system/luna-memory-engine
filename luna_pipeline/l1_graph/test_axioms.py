@@ -16,6 +16,17 @@ CASES = [
     ("liquidity_support", True, []),
     ("control_confidence", 0.99, ["AX-001"]),
     ("control_confidence", 0.5, []),
+    # --- 等级公理 ---
+    ("inflation_pressure", "high", ["AX-005"]),
+    ("inflation_pressure", "moderate", []),
+    ("inflation_pressure", "very_high", ["AX-005"]),
+    ("policy_tightening_probability", "likely", ["AX-006"]),
+    ("policy_tightening_probability", "possible", []),
+    ("liquidity_stress", "severe", ["AX-008"]),
+    ("liquidity_stress", "mild", []),
+    # --- 布尔真 ---
+    ("related_party_deal", True, ["AX-007"]),
+    ("related_party_deal", False, []),
 ]
 
 

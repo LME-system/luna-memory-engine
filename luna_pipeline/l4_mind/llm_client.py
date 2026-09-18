@@ -35,14 +35,31 @@ except Exception:  # 兜底
         {"axiom": "AX-001", "field": "control_confidence", "op": "gte", "threshold": 0.9, "meaning": "控制权集中+关联交易", "hint": "实控人控制置信度 (数值 0..1)"},
         {"axiom": "AX-003", "field": "liquidity_support", "op": "is_false", "threshold": None, "meaning": "流动性支撑断裂", "hint": "是否存在流动性支撑 (布尔)"},
         {"axiom": "AX-004", "field": "core_inflation_yoy", "op": "gt", "threshold": 4.0, "meaning": "二次通胀螺旋", "hint": "核心通胀同比 (数值, 去 %)"},
+        {"axiom": "AX-005", "field": "inflation_pressure", "op": "level_gte", "threshold": "high", "meaning": "通胀压力高企", "hint": "通胀压力等级", "scale": ["low", "moderate", "high", "very_high"]},
+        {"axiom": "AX-006", "field": "policy_tightening_probability", "op": "level_gte", "threshold": "likely", "meaning": "政策转鹰概率", "hint": "央行收紧政策可能性", "scale": ["unlikely", "possible", "likely", "near_certain"]},
+        {"axiom": "AX-007", "field": "related_party_deal", "op": "is_true", "threshold": None, "meaning": "关联交易", "hint": "是否关联方交易 (布尔)"},
+        {"axiom": "AX-008", "field": "liquidity_stress", "op": "level_gte", "threshold": "severe", "meaning": "流动性压力严峻", "hint": "流动性压力等级", "scale": ["none", "mild", "severe"]},
     ]
+
+
+def _describe_spec(s: dict) -> str:
+    op = s["op"]
+    if op in ("level_gte", "level_gt", "level_lte", "level_lt") and s.get("scale"):
+        arrow = " < ".join(s["scale"])
+        cmp = {"level_gte": ">=", "level_gt": ">", "level_lte": "<=", "level_lt": "<"}[op]
+        return f"{s['hint']}, 可选等级 {arrow}; 公理判定 等级{cmp}{s['threshold']}"
+    if op == "is_true":
+        return f"{s['hint']}; 公理判定 为真(true)"
+    if op == "is_false":
+        return f"{s['hint']}; 公理判定 为假(false)"
+    thr = "" if s["threshold"] is None else f"; 公理判定 {op} {s['threshold']}"
+    return f"{s['hint']}{thr}"
 
 
 def _build_extract_system() -> str:
     lines = []
     for s in _AXSPEC:
-        thr = "" if s["threshold"] is None else f", 公理判定 {s['op']} {s['threshold']}"
-        lines.append(f"- {s['field']} ({s['hint']}) —— {s['meaning']}{thr}")
+        lines.append(f"- {s['field']} ({_describe_spec(s)}) —— {s['meaning']}")
     fields_block = "\n".join(lines)
     return f"""你是实体/意图提取器。只输出 JSON，不要解释。
 
@@ -50,11 +67,13 @@ def _build_extract_system() -> str:
 {fields_block}
 
 【硬规则】
-1. 有确切数字就直接填数，如 "4.5%" → 4.5、"7.1倍" → 7.1。
-2. 只给方向没有确切值时，填对象 {{"value": X, "cmp": "gt|gte|lt|lte"}}，
+1. 数值字段: 有确切数字就直接填数，如 "4.5%" → 4.5、"7.1倍" → 7.1。
+2. 数值字段只给方向时，填对象 {{"value": X, "cmp": "gt|gte|lt|lte"}}，
    不要改写成相等。如 "高于4%" → {{"value": 4, "cmp": "gt"}}；"不足3%" → {{"value": 3, "cmp": "lt"}}。
-3. 文本没有证据的公理字段不要填，不要臆造数字。
-4. 允许附非公理字段，但公理字段名必须逐字一致。
+3. 等级字段: 只能填给定的可选等级之一 (逐字)，按文本强度选最贴近的那一档。
+4. 布尔字段: 填 true / false。
+5. 文本没有证据的公理字段不要填，不要臆造数字或等级。
+6. 允许附非公理字段，但公理字段名必须逐字一致。
 
 【输出 JSON】
 {{"intent": "...", "entities": [{{"id":"e:1","name":"...","type":"Company|Person|Country|Commodity|Asset"}}],
