@@ -10,6 +10,7 @@ L2/L3 服务未就绪时优雅降级 (记 not_ready)，不阻断链路。
 """
 from __future__ import annotations
 import sys, os
+from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "l1_graph"))
 
@@ -55,18 +56,37 @@ def node_symbolic(state: State) -> State:
     conf = max([t.get("confidence", 0.0) for t in triggered], default=0.0)
     symbolic = {"triggered_rules": [t["rule_id"] for t in triggered],
                 "triggered_detail": triggered, "facts_fields": fields,
-                "confidence": conf, "n": len(triggered)}
+                "confidence": conf, "n": len(triggered),
+                "unclassified": len(triggered) == 0}  # P2
     return {"symbolic": symbolic, "trace": _t(state, f"symbolic:rules={symbolic['triggered_rules']}")}
 
 
+def _detect_pattern_alert(geometric: dict) -> dict:
+    """P2: 基于 L2 几何特征检测异常模式信号。"""
+    pts = geometric.get("points", [])
+    if not pts:
+        return {"alert": False}
+    max_norm = max([p.get("poincare_norm", 0) for p in pts], default=0.0)
+    conflict = geometric.get("conflict", {})
+    base_dim = geometric.get("dimension", 64)
+    need_dim = conflict.get("need_dim", base_dim)
+    alert = False
+    reasons = []
+    if max_norm > 0.75:
+        alert = True
+        reasons.append(f"high_specificity(max_norm={max_norm:.2f})")
+    if need_dim > base_dim * 1.5:
+        alert = True
+        reasons.append(f"dimension_spike(need={need_dim}, base={base_dim})")
+    return {"alert": alert, "reasons": reasons, "max_norm": round(max_norm, 4)}
+
+
 def _build_points(state: State):
-    """构造 L2 投影点集: 图节点(实体[带事实上下文] + 事实) + 文档锚点。
-    对齐 6/28 文档 '图节点 → 几何坐标' (节点含 Entity 与 Fact)。去重后返回 (labels, texts)。
-    """
+    """构造 L2 投影点集: 图节点(实体[带事实上下文] + 事实) + 文档锚点。"""
     import re
     ents = state.get("entities") or []
     facts = state.get("facts") or []
-    pts = []            # (label, text)
+    pts = []
     seen = set()
 
     def key(s):
@@ -100,6 +120,9 @@ def node_geometry(state: State) -> State:
     res = C.l2_project(state.get("entities", []), texts, labels=labels)
     res.setdefault("status", "not_ready" if "__error__" in res else "ok")
     res.setdefault("n_points", len(texts))
+    # P2: 未覆盖时附加模式检测
+    if (state.get("symbolic") or {}).get("unclassified"):
+        res["pattern_alert"] = _detect_pattern_alert(res)
     return {"geometric": res, "trace": _t(state, f"geometry:{res.get('status')}")}
 
 
@@ -177,5 +200,28 @@ def build_graph():
 APP = build_graph()
 
 
-def run(text: str) -> dict:
-    return APP.invoke({"input_text": text, "trace": []})
+def run(text: str, article_id: str = None, title: str = None) -> dict:
+    result = APP.invoke({"input_text": text, "trace": []})
+    # P2: 归档未覆盖案例
+    sym = result.get("symbolic", {})
+    geo = result.get("geometric", {})
+    if sym.get("unclassified"):
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+        from unclassified_store import UncoveredStore
+        store = UncoveredStore()
+        hint = {}
+        pa = geo.get("pattern_alert", {})
+        if pa.get("alert"):
+            hint = {
+                "max_poincare_norm": pa.get("max_norm"),
+                "reasons": pa.get("reasons", [])
+            }
+        store.add(
+            article_id=article_id or f"auto_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+            title=title or text[:50],
+            text=text,
+            reason="pattern_alert" if pa.get("alert") else "no_axiom_hit",
+            geometric_hint=hint
+        )
+    return result
