@@ -1,6 +1,6 @@
 {
   "version": "5.0-p1",
-  "updated_at": "2026-09-19T02:55:44.174001+00:00",
+  "updated_at": "2026-09-19T03:11:03.660720+00:00",
   "axioms": [
     {
       "id": "AX-001",
@@ -293,6 +293,42 @@
       "conclusion": "AI资本投入过热 → 估值泡沫/资金链断裂/行业洗牌",
       "severity": "high",
       "confidence": 0.7,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-017",
+      "name": "半导体成本传导",
+      "field": "semiconductor_cost_transmission",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "半导体产业链成本传导 → 终端涨价/通胀压力/供应链重构",
+      "severity": "medium",
+      "confidence": 0.75,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-018",
+      "name": "AI芯片架构转型",
+      "field": "ai_chip_architecture_shift",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "AI芯片架构从GPU通用向ASIC/XPU定制转型 → 供应链重构/生态锁定/成本结构变化",
+      "severity": "medium",
+      "confidence": 0.75,
       "stats": {
         "hits": 0,
         "true_positives": 0,
