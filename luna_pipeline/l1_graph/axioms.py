@@ -66,6 +66,17 @@ def _fresh_stats(created: str) -> Dict[str, Any]:
             "last_triggered": None, "created_at": created, "source": "manual"}
 
 
+def _days_since(iso_ts: Optional[str]) -> int:
+    if not iso_ts:
+        return 0  # 无记录=刚创建，不衰减
+    try:
+        from datetime import datetime
+        dt = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
+        return max(0, (datetime.now(timezone.utc) - dt).days)
+    except Exception:
+        return 0
+
+
 # 全局 store（模块级单例，启动加载）
 _STORE = _load_store()
 LEVEL_SCALES = _STORE.get("level_scales", {})
@@ -255,3 +266,50 @@ def axiom_field_spec() -> List[Dict[str, Any]]:
     return [{"axiom": a["id"], "field": a["field"], "op": a["op"], "threshold": a.get("threshold"),
              "meaning": a.get("conclusion", ""), "hint": hints.get(a["field"], ""),
              "scale": LEVEL_SCALES.get(a["field"])} for a in _STORE.get("axioms", [])]
+
+
+# ---------- P3: 置信度刷新 ----------
+
+def refresh_confidence(dry_run: bool = False, decay_base: float = 0.95,
+                       deprecated_threshold: float = 0.30) -> Dict[str, Any]:
+    """基于时间衰减 + 反馈准确率刷新所有公理置信度。
+
+    公式: confidence_new = base_conf × (decay_base ^ days_since_last_hit) × accuracy
+    accuracy = tp / (tp + fp + 1)
+    """
+    refreshed = []
+    now = datetime.now(timezone.utc).isoformat()
+    for ax in _STORE.get("axioms", []):
+        # 首次刷新时记录 base_confidence
+        if "base_confidence" not in ax:
+            ax["base_confidence"] = ax.get("confidence", 0.85)
+        base = ax["base_confidence"]
+        stats = ax.get("stats", {})
+        days = _days_since(stats.get("last_triggered"))
+        tp = stats.get("true_positives", 0)
+        fp = stats.get("false_positives", 0)
+        if (tp + fp) > 0:
+            accuracy = tp / (tp + fp + 1)
+        elif stats.get("hits", 0) == 0:
+            accuracy = 1.0  # 无触发且无反馈 = 中性
+        else:
+            accuracy = 1.0  # 有触发但无反馈 = 暂时中性
+        new_conf = round(base * (decay_base ** days) * accuracy, 4)
+        old_conf = ax.get("confidence", base)
+        action = "kept"
+        if new_conf < deprecated_threshold and ax.get("severity") != "deprecated":
+            action = "deprecated"
+            if not dry_run:
+                ax["confidence"] = 0.0
+                ax["severity"] = "deprecated"
+        elif not dry_run:
+            ax["confidence"] = new_conf
+        refreshed.append({
+            "rule_id": ax["id"], "old": old_conf, "new": new_conf if action != "deprecated" else 0.0,
+            "days_since_hit": days, "accuracy": round(accuracy, 4), "action": action,
+        })
+    if not dry_run:
+        _save_store(_STORE)
+    return {"dry_run": dry_run, "refreshed": refreshed, "timestamp": now,
+            "n_deprecated": sum(1 for r in refreshed if r["action"] == "deprecated"),
+            "n_changed": sum(1 for r in refreshed if r["old"] != r["new"] and r["action"] != "deprecated")}

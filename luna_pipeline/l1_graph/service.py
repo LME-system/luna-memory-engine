@@ -77,6 +77,12 @@ class AxiomFeedbackBody(BaseModel):
     feedback: str  # tp | fp | deprecated
 
 
+class AxiomRefreshBody(BaseModel):
+    dry_run: bool = False
+    decay_base: float = 0.95
+    deprecated_threshold: float = 0.30
+
+
 @app.get("/health")
 def health():
     try:
@@ -122,6 +128,12 @@ def list_axioms():
 @app.get("/axioms/stats")
 def get_axiom_stats():
     return AX.axiom_stats()
+
+
+@app.post("/axioms/refresh")
+def refresh_axioms(body: AxiomRefreshBody):
+    return AX.refresh_confidence(dry_run=body.dry_run, decay_base=body.decay_base,
+                                 deprecated_threshold=body.deprecated_threshold)
 
 
 @app.get("/axioms/{rule_id}")

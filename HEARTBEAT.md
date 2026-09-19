@@ -2,13 +2,9 @@
 
 ## 周期性检查清单
 
-- [ ] **未覆盖案例审查** — 检查 `luna_pipeline/data/unclassified_log.jsonl`
-  - 今日未 review 案例数 > 0 → 推送给老吴，附 top-3 候选
-  - 老吴回复格式示例：`AX-013: 制裁升级 → 供应链断裂风险, field=sanction_level, op=level_gte, threshold=significant`
-  - 系统解析 → 调用 `POST /axioms` 新增公理 → 标记案例为 reviewed
-
-- [ ] Luna SGP 服务健康 (:8001-:8004)
-- [ ] 天气（若老吴今日有外出计划相关上下文）
+- [ ] **公理置信度刷新** — 调用 `POST /axioms/refresh` (dry_run 先检查)
+  - 低于 0.3 的公理自动标记 deprecated → 进 review 队列
+  - 衰减公式: base_conf × (0.95 ^ days_since_last_hit) × (tp/(tp+fp+1))
 
 ## 状态文件
 - `luna_pipeline/data/unclassified_log.jsonl` — 未覆盖案例日志
