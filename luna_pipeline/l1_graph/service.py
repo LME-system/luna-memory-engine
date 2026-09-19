@@ -7,6 +7,14 @@
   POST /check_axiom                 公理检查 → 触发规则
   POST /verify                      验证结论是否违反公理
   GET  /stats                       图规模
+
+--- 公理管理 (P1 持久化) ---
+  GET  /axioms                      列出全部公理
+  GET  /axioms/{rule_id}            获取单条公理
+  POST /axioms                      新增/更新公理
+  DELETE /axioms/{rule_id}          删除公理
+  POST /axioms/{rule_id}/feedback   反馈 (tp/fp/deprecated)
+  GET  /axioms/stats                公理命中统计
 """
 from __future__ import annotations
 import sys, os
@@ -28,7 +36,9 @@ def _startup():
     gc.verify()
     gc.init_schema()
     for r in AX.all_axioms():
-        gc.upsert_rule(r)
+        # Neo4j 不支持 Map 类型属性 → 剥离 stats 后再写入图
+        rule_clean = {k: v for k, v in r.items() if k != "stats"}
+        gc.upsert_rule(rule_clean)
 
 
 class IngestBody(BaseModel):
@@ -50,6 +60,21 @@ class AxiomBody(BaseModel):
 class VerifyBody(BaseModel):
     violates: List[str] = []
     conclusion: Optional[str] = None
+
+
+class AxiomRuleBody(BaseModel):
+    id: str
+    name: str
+    field: str
+    op: str
+    threshold: Any = None
+    conclusion: str = ""
+    severity: str = "medium"
+    confidence: float = 0.85
+
+
+class AxiomFeedbackBody(BaseModel):
+    feedback: str  # tp | fp | deprecated
 
 
 @app.get("/health")
@@ -85,3 +110,38 @@ def verify(body: VerifyBody):
 @app.get("/stats")
 def stats():
     return gc.stats()
+
+
+# ---------- 公理管理 API (P1) ----------
+
+@app.get("/axioms")
+def list_axioms():
+    return {"axioms": AX.all_axioms(), "n": len(AX.all_axioms()), "version": AX._STORE.get("version")}
+
+
+@app.get("/axioms/stats")
+def get_axiom_stats():
+    return AX.axiom_stats()
+
+
+@app.get("/axioms/{rule_id}")
+def get_axiom(rule_id: str):
+    ax = AX.axiom_by_id(rule_id)
+    if not ax:
+        return {"status": "not_found", "rule_id": rule_id}
+    return ax
+
+
+@app.post("/axioms")
+def create_or_update_axiom(body: AxiomRuleBody):
+    return AX.add_axiom(body.dict())
+
+
+@app.delete("/axioms/{rule_id}")
+def remove_axiom(rule_id: str):
+    return AX.delete_axiom(rule_id)
+
+
+@app.post("/axioms/{rule_id}/feedback")
+def feedback_axiom(rule_id: str, body: AxiomFeedbackBody):
+    return AX.update_axiom_stats(rule_id, body.feedback)

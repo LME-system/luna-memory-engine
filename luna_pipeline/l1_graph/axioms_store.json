@@ -1,0 +1,252 @@
+{
+  "version": "5.0-p1",
+  "updated_at": "2026-09-19T00:06:52.343854+00:00",
+  "axioms": [
+    {
+      "id": "AX-001",
+      "name": "控制权集中+关联交易",
+      "field": "control_confidence",
+      "op": "gte",
+      "threshold": 0.9,
+      "conclusion": "利益输送风险 (实控人高置信控制)",
+      "severity": "high",
+      "confidence": 0.8,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-17",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-002",
+      "name": "高溢价风险",
+      "field": "premium_ratio",
+      "op": "gt",
+      "threshold": 5,
+      "conclusion": "极高溢价/泡沫风险",
+      "severity": "high",
+      "confidence": 0.85,
+      "stats": {
+        "hits": 1,
+        "true_positives": 1,
+        "false_positives": 0,
+        "last_triggered": "2026-09-19T00:06:52.168735+00:00",
+        "created_at": "2026-09-17",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-003",
+      "name": "流动性支撑断裂",
+      "field": "liquidity_support",
+      "op": "is_false",
+      "threshold": null,
+      "conclusion": "支撑结构断裂 / 流动性坍缩",
+      "severity": "high",
+      "confidence": 0.75,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-17",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-004",
+      "name": "二次通胀螺旋",
+      "field": "core_inflation_yoy",
+      "op": "gt",
+      "threshold": 4.0,
+      "conclusion": "通胀二轮传导 → 央行被迫鹰派",
+      "severity": "medium",
+      "confidence": 0.8,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-17",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-005",
+      "name": "通胀压力高企",
+      "field": "inflation_pressure",
+      "op": "level_gte",
+      "threshold": "high",
+      "conclusion": "通胀压力高企 → 紧缩预期升温",
+      "severity": "medium",
+      "confidence": 0.7,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-18",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-006",
+      "name": "政策转鹰概率",
+      "field": "policy_tightening_probability",
+      "op": "level_gte",
+      "threshold": "likely",
+      "conclusion": "央行转向鹰派概率上升",
+      "severity": "medium",
+      "confidence": 0.7,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-18",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-007",
+      "name": "关联交易",
+      "field": "related_party_deal",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "关联交易 → 利益输送/掏空风险",
+      "severity": "high",
+      "confidence": 0.7,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-18",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-008",
+      "name": "流动性压力严峻",
+      "field": "liquidity_stress",
+      "op": "level_gte",
+      "threshold": "severe",
+      "conclusion": "流动性压力严峻 → 再融资风险",
+      "severity": "high",
+      "confidence": 0.72,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-18",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-009",
+      "name": "AI实体化临界点",
+      "field": "ai_embodiment_level",
+      "op": "level_gte",
+      "threshold": "physical_lab",
+      "conclusion": "AI 实体化临界点：从模拟进入物理闭环",
+      "severity": "high",
+      "confidence": 0.8,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-010",
+      "name": "AI安全叙事升温",
+      "field": "ai_safety_concern",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "AI 安全叙事升温 → 监管/放缓/第三方评估预期",
+      "severity": "medium",
+      "confidence": 0.75,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-011",
+      "name": "递归自我改进信号",
+      "field": "ai_self_improvement",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "递归自我改进信号 → 能力跃迁/控制忧虑",
+      "severity": "high",
+      "confidence": 0.78,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-012",
+      "name": "AI生物融合",
+      "field": "bio_ai_integration",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "AI-生物融合 → 罕见病/药物研发范式转移",
+      "severity": "medium",
+      "confidence": 0.72,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    }
+  ],
+  "level_scales": {
+    "inflation_pressure": [
+      "low",
+      "moderate",
+      "high",
+      "very_high"
+    ],
+    "policy_tightening_probability": [
+      "unlikely",
+      "possible",
+      "likely",
+      "near_certain"
+    ],
+    "liquidity_stress": [
+      "none",
+      "mild",
+      "severe"
+    ],
+    "governance_risk": [
+      "low",
+      "moderate",
+      "high"
+    ],
+    "ai_embodiment_level": [
+      "digital_only",
+      "hybrid",
+      "physical_lab",
+      "full_automation"
+    ]
+  }
+}
