@@ -1,6 +1,6 @@
 {
   "version": "5.0-p1",
-  "updated_at": "2026-09-19T00:06:52.343854+00:00",
+  "updated_at": "2026-09-19T02:55:44.174001+00:00",
   "axioms": [
     {
       "id": "AX-001",
@@ -18,7 +18,8 @@
         "last_triggered": null,
         "created_at": "2026-09-17",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.8
     },
     {
       "id": "AX-002",
@@ -30,13 +31,14 @@
       "severity": "high",
       "confidence": 0.85,
       "stats": {
-        "hits": 1,
-        "true_positives": 1,
+        "hits": 0,
+        "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": "2026-09-19T00:06:52.168735+00:00",
+        "last_triggered": null,
         "created_at": "2026-09-17",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.85
     },
     {
       "id": "AX-003",
@@ -48,13 +50,14 @@
       "severity": "high",
       "confidence": 0.75,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-19T00:49:45.328123+00:00",
         "created_at": "2026-09-17",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.75
     },
     {
       "id": "AX-004",
@@ -72,7 +75,8 @@
         "last_triggered": null,
         "created_at": "2026-09-17",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.8
     },
     {
       "id": "AX-005",
@@ -90,7 +94,8 @@
         "last_triggered": null,
         "created_at": "2026-09-18",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.7
     },
     {
       "id": "AX-006",
@@ -108,7 +113,8 @@
         "last_triggered": null,
         "created_at": "2026-09-18",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.7
     },
     {
       "id": "AX-007",
@@ -126,7 +132,8 @@
         "last_triggered": null,
         "created_at": "2026-09-18",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.7
     },
     {
       "id": "AX-008",
@@ -138,13 +145,14 @@
       "severity": "high",
       "confidence": 0.72,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-19T00:49:45.328123+00:00",
         "created_at": "2026-09-18",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.72
     },
     {
       "id": "AX-009",
@@ -162,7 +170,8 @@
         "last_triggered": null,
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.8
     },
     {
       "id": "AX-010",
@@ -180,7 +189,8 @@
         "last_triggered": null,
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.75
     },
     {
       "id": "AX-011",
@@ -198,7 +208,8 @@
         "last_triggered": null,
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.78
     },
     {
       "id": "AX-012",
@@ -209,6 +220,79 @@
       "conclusion": "AI-生物融合 → 罕见病/药物研发范式转移",
       "severity": "medium",
       "confidence": 0.72,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      },
+      "base_confidence": 0.72
+    },
+    {
+      "id": "AX-013",
+      "name": "地缘冲突升级",
+      "field": "geo_conflict_escalation",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "地缘冲突升级 → 能源/航运/供应链中断风险",
+      "severity": "high",
+      "confidence": 0.75,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-014",
+      "name": "出口管制收紧",
+      "field": "export_control_tightening",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "关键技术出口管制收紧 → 供应链替代/国产替代加速",
+      "severity": "high",
+      "confidence": 0.78,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-015",
+      "name": "AI安全叙事博弈",
+      "field": "ai_safety_narrative_clash",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "AI安全/能力叙事公开对抗 → 监管预期波动/政策不确定性",
+      "severity": "medium",
+      "confidence": 0.72,
+      "stats": {
+        "hits": 0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": null,
+        "created_at": "2026-09-19",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "AX-016",
+      "name": "AI资本投入过热",
+      "field": "ai_capital_burn_rate",
+      "op": "level_gte",
+      "threshold": "extreme",
+      "conclusion": "AI资本投入过热 → 估值泡沫/资金链断裂/行业洗牌",
+      "severity": "high",
+      "confidence": 0.7,
       "stats": {
         "hits": 0,
         "true_positives": 0,
