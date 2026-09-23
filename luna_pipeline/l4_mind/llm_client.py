@@ -10,7 +10,7 @@ PROVIDER = os.getenv("LUNA_LLM_PROVIDER", "ollama").lower()
 OLLAMA = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat")
 
 
-def _deepseek_cfg():
+def _deepseek_cfg(model_override=None):
     base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     model = os.getenv("LUNA_LLM", "deepseek-flash")
     key = os.getenv("DEEPSEEK_API_KEY", "")
@@ -22,11 +22,14 @@ def _deepseek_cfg():
             model = os.getenv("LUNA_LLM") or ds.get("models", [{}])[0].get("id", model)
         except Exception:
             pass
+    if model_override is not None:      # 显式指定时覆盖 env/配置解析结果
+        model = model_override
     return base.rstrip("/"), key, model
 
 
-def _chat_ollama(system, user, num_predict, temperature, timeout, fmt):
-    model = os.getenv("LUNA_LLM", "gemma4:31b")
+def _chat_ollama(system, user, num_predict, temperature, timeout, fmt, model=None):
+    if model is None:                   # 行为不变：沿用 LUNA_LLM / 原默认
+        model = os.getenv("LUNA_LLM", "gemma4:31b")
     payload = {"model": model, "stream": False, "think": False,
                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
                "options": {"num_predict": num_predict, "temperature": temperature}}
@@ -38,11 +41,16 @@ def _chat_ollama(system, user, num_predict, temperature, timeout, fmt):
         return json.loads(r.read().decode()).get("message", {}).get("content", "")
 
 
-def _chat_deepseek(system, user, num_predict, temperature, timeout, fmt):
-    base, key, model = _deepseek_cfg()
+def _chat_deepseek(system, user, num_predict, temperature, timeout, fmt, think=True, model=None):
+    base, key, model = _deepseek_cfg(model)
+    # deepseek-flash 是推理模型：max_tokens 同时覆盖 reasoning 与 content。
+    # 不关 thinking 时必须额外预留 reasoning 预算，否则 long input 下 finish_reason=length → content 为空。
+    max_tokens = num_predict if not think else num_predict + 6000
     payload = {"model": model, "stream": False,
                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-               "temperature": temperature, "max_tokens": num_predict}
+               "temperature": temperature, "max_tokens": max_tokens}
+    if not think:
+        payload["thinking"] = {"type": "disabled"}
     if fmt is not None:
         payload["response_format"] = {"type": "json_object"}
     req = urllib.request.Request(base + "/chat/completions",
@@ -55,10 +63,13 @@ def _chat_deepseek(system, user, num_predict, temperature, timeout, fmt):
 
 
 def chat(system: str, user: str, num_predict: int = 1200, temperature: float = 0.3,
-         timeout: int = 600, fmt=None) -> str:
-    if PROVIDER == "deepseek":
-        return _chat_deepseek(system, user, num_predict, temperature, timeout, fmt)
-    return _chat_ollama(system, user, num_predict, temperature, timeout, fmt)
+         timeout: int = 600, fmt=None, think: bool = True,
+         provider: str = None, model: str = None) -> str:
+    """provider/model 为 None 时行为与旧版完全一致（读模块级 PROVIDER / 各分支的 env）。"""
+    p = (provider or PROVIDER).strip().lower()
+    if p == "deepseek":
+        return _chat_deepseek(system, user, num_predict, temperature, timeout, fmt, think, model)
+    return _chat_ollama(system, user, num_predict, temperature, timeout, fmt, model)
 
 
 # ---- extract 公理字段清单: 从 L1 axioms 动态生成 (单一真源) ----
@@ -154,6 +165,9 @@ def _np(ollama_val: int, deepseek_val: int) -> int:
 
 
 def extract(text: str) -> dict:
+    # think 必须保持开启：抽取层靠推理预算来"开新槽"（造出公理库外的字段）。
+    # 实测关掉 thinking 会砍掉一半以上召回（10→3 fact），且退化为从字段清单里挑最近邻（假阳性更高）。
+    # 空 content 已由 _chat_deepseek 的 reasoning 预算（+6000）解决，不靠关 thinking。
     np_ = _np(800, 3000)
     d = {}
     for _ in range(3):                      # 间歇性空返回 → 重试
@@ -168,13 +182,20 @@ def extract(text: str) -> dict:
 
 
 SYNTH_SYSTEM = """你是 Luna SGP 编排层的综合器。基于给定的符号/几何/拓扑/验证结果，
-输出：结论、解释、置信度。锐利、密度高、不空话。只输出 JSON：
-{"conclusion": "...", "explanation": "...", "confidence": 0.0}"""
+输出四个字段：synthesis（总览判读）、conclusion（结论）、explanation（解释）、confidence。
+
+- synthesis: 一段独立的总览判读——站在整篇文章之上，凝练事件的结构形状、要害与走向。
+  必须是独立成篇的判读，既不是 conclusion 的复制，也不是 explanation 的拼接。
+- conclusion: 结论。锐利、直接、可判定。
+- explanation: 解释。展开推理链条与依据。
+
+三个文本字段内容必须互不重复、各自完整。密度高、不空话。只输出 JSON：
+{"synthesis": "...", "conclusion": "...", "explanation": "...", "confidence": 0.0}"""
 
 SYNTH_FORMAT = {
     "type": "object",
-    "properties": {"conclusion": {"type": "string"}, "explanation": {"type": "string"},
-                   "confidence": {"type": "number"}},
+    "properties": {"synthesis": {"type": "string"}, "conclusion": {"type": "string"},
+                   "explanation": {"type": "string"}, "confidence": {"type": "number"}},
     "required": ["conclusion"],
 }
 
@@ -219,10 +240,89 @@ def synthesize(state: dict) -> dict:
         d = _parse_json(raw)
         if d.get("conclusion"):
             break
+    d.setdefault("synthesis", "")
     d.setdefault("conclusion", "")
     d.setdefault("explanation", "")
     d.setdefault("confidence", 0.5)
     return d
+
+
+# ---- 问题2: LLM 结构化分类 (与 Jev 六枚举/刻度严格对齐) ----
+EVENT_TYPES = ["monetary", "fiscal", "geopolitical", "tech_regulation", "market_structure", "other"]
+
+CLASSIFY_SYSTEM = """你是宏观/政策事件分类器。只输出 JSON，不要解释。
+
+【event_type】只能取下列六个值之一（逐字）:
+- monetary        货币政策：利率、QE/QT、央行动作、流动性
+- fiscal          财政政策：赤字、税收、政府支出、债务
+- geopolitical    地缘冲突、国际关系、制裁、外交博弈
+- tech_regulation 科技监管、AI 政策、数据安全、半导体管制
+- market_structure 市场结构：ETF、交易机制、衍生品、流动性结构
+- other           其他或无法归类
+
+【sentiment_score】0~5 整数（市场情绪极性）:
+0=极度恐慌/崩溃性抛售 1=恐慌/避险 2=偏空/谨慎 3=中性/观望 4=偏多/乐观 5=狂热/FOMO
+
+【certainty_hint】0~4 整数（信息确定性）:
+0=纯传闻 1=弱信号 2=部分确认 3=即将官宣 4=已官宣/已落地
+
+【confidence】0~1 小数（你对本次分类的整体把握）:
+文本信息不足/指代不明/可归多类时给低值，明确单一时给高值。
+
+【输出 JSON】{"event_type": "<六枚举之一>", "sentiment_score": <0-5>, "certainty_hint": <0-4>, "confidence": <0-1>}"""
+
+CLASSIFY_FORMAT = {
+    "type": "object",
+    "properties": {
+        "event_type": {"type": "string", "enum": EVENT_TYPES},
+        "sentiment_score": {"type": "integer", "minimum": 0, "maximum": 5},
+        "certainty_hint": {"type": "integer", "minimum": 0, "maximum": 4},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    },
+    "required": ["event_type", "sentiment_score", "certainty_hint"],
+}
+
+
+def classify(text: str, timeout: int = 300) -> dict:
+    """单次 LLM 调用输出与 Jev 对齐的结构化分类。
+
+    Returns:
+        {"event_type": str, "sentiment_score": int, "certainty_hint": int}
+        解析失败或值越界不可修复时返回 {}（供调用方回落关键词启发式）。
+    """
+    np_ = _np(120, 400)
+    for _ in range(2):
+        try:
+            raw = chat(CLASSIFY_SYSTEM, text[:3000], num_predict=np_, temperature=0.0,
+                       timeout=timeout, fmt=CLASSIFY_FORMAT, think=False)
+        except Exception:
+            try:
+                raw = chat(CLASSIFY_SYSTEM, text[:3000], num_predict=np_, temperature=0.0,
+                           timeout=timeout, think=False)
+            except Exception:
+                continue
+        d = _parse_json(raw)
+        if not isinstance(d, dict):
+            continue
+        et = d.get("event_type")
+        if et not in EVENT_TYPES:
+            continue
+        try:
+            ss = int(d.get("sentiment_score"))
+            ch = int(d.get("certainty_hint"))
+        except (TypeError, ValueError):
+            continue
+        if not (0 <= ss <= 5 and 0 <= ch <= 4):
+            continue
+        out = {"event_type": et, "sentiment_score": ss, "certainty_hint": ch}
+        try:                                    # confidence 可选：解析失败不出键，避免伪造置信度
+            cf = float(d.get("confidence"))
+            if 0.0 <= cf <= 1.0:
+                out["confidence"] = cf
+        except (TypeError, ValueError):
+            pass
+        return out
+    return {}
 
 
 def _parse_json(raw: str) -> dict:

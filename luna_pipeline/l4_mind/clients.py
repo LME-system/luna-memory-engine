@@ -37,6 +37,15 @@ def l2_project(entities: list, texts: list, labels: list = None):
     return _post(L2, "/project", body)
 
 
-def l3_analyze(points: list):
-    """L3 拓扑层：持续同调 (P4 实现前返回 not_ready)。"""
-    return _post(L3, "/analyze", {"points": points}, timeout=300)
+def l3_analyze(points: list, rel: float = None, maxdim: int = None):
+    """L3 拓扑层：持续同调 (P4 实现前返回 not_ready)。
+
+    rel: 显著空洞阈值比例 (越小连接越密)。未指定时不发 rel，沿用服务端默认 0.4。
+    maxdim: 未指定时不发，沿用服务端默认 1 —— 保证未接入 Jev 时请求体与原先完全一致。
+    """
+    body = {"points": points}
+    if maxdim is not None:
+        body["maxdim"] = maxdim
+    if rel is not None:
+        body["rel"] = rel
+    return _post(L3, "/analyze", body, timeout=300)
