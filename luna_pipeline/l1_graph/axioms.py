@@ -151,14 +151,18 @@ def _cmp(op: str, val: Any, thr: Any, field: Optional[str] = None) -> bool:
 # ---------- 核心 API（带追踪） ----------
 
 def check_axiom(facts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """facts: [{field:value,...}]；返回命中公理列表，并更新 store 命中统计。"""
+    """facts: [{field:value,...}]；返回命中公理列表（同一条公理一次调用最多记一条），并更新 store 命中统计。"""
     triggered: List[Dict[str, Any]] = []
+    seen: set = set()
     now_iso = datetime.now(timezone.utc).isoformat()
     axioms = _axioms_list()
 
     for f in facts:
         for r in axioms:
+            if r.id in seen:
+                continue
             if r.field in f and _cmp(r.op, f[r.field], r.threshold, field=r.field):
+                seen.add(r.id)
                 triggered.append({
                     "rule_id": r.id, "name": r.name, "conclusion": r.conclusion,
                     "severity": r.severity, "confidence": r.confidence,
@@ -262,6 +266,16 @@ def axiom_field_spec() -> List[Dict[str, Any]]:
         "ai_safety_concern": "是否存在 AI 安全担忧、监管呼吁或放缓开发 (布尔 true/false)",
         "ai_self_improvement": "是否提及递归自我改进、AI 自我迭代或自主运行 (布尔 true/false)",
         "bio_ai_integration": "是否 AI 与生物学/药物研发/实体实验室融合 (布尔 true/false)",
+        "geo_conflict_escalation": "是否存在地缘冲突升级（军事打击、空袭、封锁、报复威胁、海峡/航运中断）(布尔 true/false)",
+        "export_control_tightening": "是否存在关键技术与物项出口管制收紧（出口许可、禁运、实体清单）(布尔 true/false)",
+        "ai_safety_narrative_clash": "是否存在 AI 安全/能力叙事的公开对抗（末日论 vs 加速论、监管呼吁 vs 驳斥）(布尔 true/false)",
+        "ai_capital_burn_rate": "AI 资本投入/烧钱强度等级 (定性)",
+        "semiconductor_cost_transmission": "是否存在半导体产业链成本传导（原材料/代工涨价转嫁下游）(布尔 true/false)",
+        "ai_chip_architecture_shift": "是否存在 AI 芯片架构从 GPU 通用向 ASIC/XPU 定制的转型信号 (布尔 true/false)",
+        "regulatory_systematization": "是否存在政策/监管体系化规制信号（准入-退出-价格-竞争-平台-标准组合拳，而非单点表态）(布尔 true/false)",
+        "alliance_deterrence_decay": "是否存在联盟威慑/军援承诺贬值信号（对盟友交付延迟、库存见底、盟友自寻安全替代）(布尔 true/false)",
+        "domestic_advanced_memory_mass_production": "是否存在国产高端存储（DRAM/LPDDR/HBM 等）量产或新一代技术平台量产 (布尔 true/false)",
+        "vulnerability_monetization": "是否存在脆弱性变现/成瘾剥削信号：以行为数据建模识别用户成瘾或认知偏差、将营销/供给资源定向倾斜至最易受损群体、且有反向防护/干预方案被关停或搁置 (布尔 true/false)",
     }
     return [{"axiom": a["id"], "field": a["field"], "op": a["op"], "threshold": a.get("threshold"),
              "meaning": a.get("conclusion", ""), "hint": hints.get(a["field"], ""),

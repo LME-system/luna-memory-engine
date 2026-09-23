@@ -1,6 +1,6 @@
 {
   "version": "5.0-p1",
-  "updated_at": "2026-09-19T03:11:03.660720+00:00",
+  "updated_at": "2026-09-23T23:32:21.651267+00:00",
   "axioms": [
     {
       "id": "AX-001",
@@ -12,10 +12,10 @@
       "severity": "high",
       "confidence": 0.8,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.649088+00:00",
         "created_at": "2026-09-17",
         "source": "manual"
       },
@@ -31,10 +31,10 @@
       "severity": "high",
       "confidence": 0.85,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.648219+00:00",
         "created_at": "2026-09-17",
         "source": "manual"
       },
@@ -50,10 +50,10 @@
       "severity": "high",
       "confidence": 0.75,
       "stats": {
-        "hits": 2,
+        "hits": 10,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": "2026-09-19T00:49:45.328123+00:00",
+        "last_triggered": "2026-09-23T23:32:21.648646+00:00",
         "created_at": "2026-09-17",
         "source": "manual"
       },
@@ -69,10 +69,10 @@
       "severity": "medium",
       "confidence": 0.8,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.647768+00:00",
         "created_at": "2026-09-17",
         "source": "manual"
       },
@@ -88,10 +88,10 @@
       "severity": "medium",
       "confidence": 0.7,
       "stats": {
-        "hits": 0,
+        "hits": 8,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.649971+00:00",
         "created_at": "2026-09-18",
         "source": "manual"
       },
@@ -107,10 +107,10 @@
       "severity": "medium",
       "confidence": 0.7,
       "stats": {
-        "hits": 0,
+        "hits": 3,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.650375+00:00",
         "created_at": "2026-09-18",
         "source": "manual"
       },
@@ -126,10 +126,10 @@
       "severity": "high",
       "confidence": 0.7,
       "stats": {
-        "hits": 0,
+        "hits": 2,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T23:32:21.651246+00:00",
         "created_at": "2026-09-18",
         "source": "manual"
       },
@@ -145,10 +145,10 @@
       "severity": "high",
       "confidence": 0.72,
       "stats": {
-        "hits": 2,
+        "hits": 15,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": "2026-09-19T00:49:45.328123+00:00",
+        "last_triggered": "2026-09-23T23:32:21.650809+00:00",
         "created_at": "2026-09-18",
         "source": "manual"
       },
@@ -164,10 +164,10 @@
       "severity": "high",
       "confidence": 0.8,
       "stats": {
-        "hits": 0,
+        "hits": 11,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T13:12:48.177565+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
       },
@@ -183,10 +183,10 @@
       "severity": "medium",
       "confidence": 0.75,
       "stats": {
-        "hits": 0,
+        "hits": 15,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:46:47.135030+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
       },
@@ -202,10 +202,10 @@
       "severity": "high",
       "confidence": 0.78,
       "stats": {
-        "hits": 0,
+        "hits": 4,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:34:09.747376+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
       },
@@ -240,13 +240,14 @@
       "severity": "high",
       "confidence": 0.75,
       "stats": {
-        "hits": 0,
+        "hits": 26,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T13:12:48.177565+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.75
     },
     {
       "id": "AX-014",
@@ -258,13 +259,14 @@
       "severity": "high",
       "confidence": 0.78,
       "stats": {
-        "hits": 0,
+        "hits": 3,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:39:01.442377+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.78
     },
     {
       "id": "AX-015",
@@ -276,13 +278,14 @@
       "severity": "medium",
       "confidence": 0.72,
       "stats": {
-        "hits": 0,
+        "hits": 1,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:34:09.747376+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.72
     },
     {
       "id": "AX-016",
@@ -294,13 +297,14 @@
       "severity": "high",
       "confidence": 0.7,
       "stats": {
-        "hits": 0,
+        "hits": 14,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-23T13:03:47.182141+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.7
     },
     {
       "id": "AX-017",
@@ -312,13 +316,14 @@
       "severity": "medium",
       "confidence": 0.75,
       "stats": {
-        "hits": 0,
+        "hits": 1,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:34:09.747376+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.75
     },
     {
       "id": "AX-018",
@@ -330,13 +335,90 @@
       "severity": "medium",
       "confidence": 0.75,
       "stats": {
-        "hits": 0,
+        "hits": 1,
         "true_positives": 0,
         "false_positives": 0,
-        "last_triggered": null,
+        "last_triggered": "2026-09-22T23:34:09.747376+00:00",
         "created_at": "2026-09-19",
         "source": "manual"
-      }
+      },
+      "base_confidence": 0.75
+    },
+    {
+      "id": "AX-019",
+      "name": "政策体系化规制",
+      "field": "regulatory_systematization",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "政策体系化规制（准入-退出-价格-竞争-平台-标准闭环）→ 合规成本上升、尾部出清、龙头受益",
+      "severity": "medium",
+      "confidence": 0.72,
+      "stats": {
+        "hits": 26,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": "2026-09-23T12:59:39.874415+00:00",
+        "created_at": "2026-09-20",
+        "source": "manual"
+      },
+      "base_confidence": 0.72
+    },
+    {
+      "id": "AX-020",
+      "name": "威慑承诺贬值",
+      "field": "alliance_deterrence_decay",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "联盟威慑/军援承诺贬值（交付延迟、库存见底、盟友自寻安全替代）→ 地缘风险溢价上升、联盟可信度下调",
+      "severity": "high",
+      "confidence": 0.73,
+      "stats": {
+        "hits": 18,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": "2026-09-20T13:36:54.838606+00:00",
+        "created_at": "2026-09-20",
+        "source": "manual"
+      },
+      "base_confidence": 0.73
+    },
+    {
+      "id": "AX-021",
+      "name": "国产高端存储量产",
+      "field": "domestic_advanced_memory_mass_production",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "国产高端存储量产 → 存储供应链替代窗口开启、价格传导",
+      "severity": "medium",
+      "confidence": 0.72,
+      "stats": {
+        "hits": 3,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": "2026-09-20T13:37:26.200416+00:00",
+        "created_at": "2026-09-20",
+        "source": "manual"
+      },
+      "base_confidence": 0.72
+    },
+    {
+      "id": "AX-022",
+      "name": "脆弱性变现（成瘾剥削）",
+      "field": "vulnerability_monetization",
+      "op": "is_true",
+      "threshold": null,
+      "conclusion": "脆弱性变现 → AI 价值提取集中于用户隐藏状态（成瘾响应函数）、善意干预通道被主动关闭、收益方向单一化，指向监管缺位",
+      "severity": "medium",
+      "confidence": 0.7,
+      "stats": {
+        "hits": 3,
+        "true_positives": 0,
+        "false_positives": 0,
+        "last_triggered": "2026-09-20T14:13:38.212183+00:00",
+        "created_at": "2026-09-20",
+        "source": "manual"
+      },
+      "base_confidence": 0.7
     }
   ],
   "level_scales": {
@@ -367,6 +449,12 @@
       "hybrid",
       "physical_lab",
       "full_automation"
+    ],
+    "ai_capital_burn_rate": [
+      "low",
+      "moderate",
+      "high",
+      "extreme"
     ]
   }
 }
